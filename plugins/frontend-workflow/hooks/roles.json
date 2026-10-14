@@ -150,6 +150,9 @@
       ],
       "question": [
         "^(what|why|how|explain|is|are|can|could|does|do|did|should|which|where|when|who|tell me|show me how)\\b[^]*\\?\\s*$",
+        "^(explain|why|show me|tell me|walk me through)\\b",
+        "^how (does|do|is|are|can|did|should|would|come)\\b",
+        "^what('s| is| are| does| do| did)\\b",
         "^(ايه|إيه|ليه|ازاي|إزاي|هل|اشرح|إشرح|فين|امتى|مين)"
       ]
     },

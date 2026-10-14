@@ -80,7 +80,7 @@ You don't need commands. Write the request the way you'd say it to a teammate.
 | "How does the pricing hook work?" | question | a normal answer |
 | "… #no-workflow" | off | no pipeline for this message (role guards still apply) |
 
-Detection uses trigger words. "Add a … page/form/section", "implement the …", "build a …" count as features; "fix", "bug", "broken", "error" count as fixes. Arabic works too ("ضيف صفحة", "صلح", "غير"). If a request isn't picked up the way you meant, start it with the slash command (`/frontend-workflow:feature …`) or rephrase.
+Detection uses trigger words. "Add a … page/form/section", "implement the …", "build a …" count as features; "fix", "bug", "broken", "error" count as fixes. If a request isn't picked up the way you meant, start it with the slash command (`/frontend-workflow:feature …`) or rephrase.
 
 ### Approving the plan
 
@@ -88,10 +88,11 @@ Claude ends the plan with **Reply "approve" to start building, or tell me what t
 
 | You reply | What happens |
 |---|---|
-| `approve`, `go ahead`, `lgtm`, `موافق`, `تمام`, `يلا` | building starts and runs to the end without stopping |
+| `approve`, `go ahead`, `lgtm`, `proceed` | building starts and runs to the end without stopping |
 | `approve, but name the route /deals` | approved, with that instruction applied |
 | anything else | treated as feedback: the plan is revised and shown again |
-| `cancel`, `no`, `الغي` | the task is dropped |
+| a separate new request | the plan is kept, and Claude asks you to `approve` it, or `cancel` it and send the new request again |
+| `cancel`, `no`, `stop` | the task is dropped |
 
 After approval, Claude stays inside the plan. If it needs a different approach, a new dependency, or files outside the plan, it asks you again.
 
@@ -112,7 +113,7 @@ Customers book a car from Cairo Airport (CAI) to an address and see the price be
 - AC2: Flight number is validated (e.g. MS985); invalid input shows an inline error.
 - AC3: Price is shown before confirm, based on car class.
 - AC4: Confirm creates the booking and shows a confirmation page with a reference.
-- AC5: The form works in Arabic (RTL) and English.
+- AC5: The form is keyboard accessible and every field has a label.
 - AC6: The page has its own title and description.
 ```
 
@@ -137,7 +138,7 @@ Tips: number the criteria (AC1, AC2…), keep each one testable, and write "out 
 4. **Build:** `typescript-pro` writes the types and schema, `nextjs-developer` the server action and pages, `react-specialist` the form and price summary. Each can only write the files in its brief.
 5. **Tests:** `test-automator` writes one or more tests per criterion.
 6. **Verify:** lint, typecheck and tests run; a failure goes back to the builder who owns the file.
-7. **Reviews:** `code-reviewer`, `architect-reviewer`, `qa-expert`, plus `security-auditor` (server action, form input), `accessibility-tester`, `performance-engineer` and `seo-specialist` (public page). Say qa-expert finds "AC5 has no RTL test": it goes back to `test-automator`, then qa-expert runs again.
+7. **Reviews:** `code-reviewer`, `architect-reviewer`, `qa-expert`, plus `security-auditor` (server action, form input), `accessibility-tester`, `performance-engineer` and `seo-specialist` (public page). Say qa-expert finds "AC5 has no keyboard test": it goes back to `test-automator`, then qa-expert runs again.
 8. **Final gate:** `surgeon-reviewer` says SHIP.
 9. **Report:** what changed, files, checks, reviews, decisions, follow-ups. Nothing is committed until you ask.
 

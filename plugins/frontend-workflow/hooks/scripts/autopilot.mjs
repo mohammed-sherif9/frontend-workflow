@@ -26,10 +26,11 @@ export function classify(prompt) {
   if (/#no-?workflow\b/i.test(text)) return 'off';
   if (/^(quick:|#quick\b)|\s#quick\b/i.test(text)) return 'quick';
 
-  const slash = text.match(/^\/(?:frontend-workflow:)?([\w-]+)/);
-  if (slash) {
-    if (text.startsWith('/frontend-workflow:') || SLASH_MODES[slash[1]]) return SLASH_MODES[slash[1]] || 'none';
-    return 'none'; // someone else's command: don't guess
+  // Only this plugin's own commands pick a mode. Bare names (/review, /plan, /fix…) belong to
+  // Claude Code or other plugins, so they are left alone.
+  if (text.startsWith('/')) {
+    const own = text.match(/^\/frontend-workflow:([\w-]+)/);
+    return own ? SLASH_MODES[own[1]] || 'none' : 'none';
   }
 
   const intents = config().autopilot.intents;
@@ -240,6 +241,8 @@ export function approvalBrief(task, approval) {
     'The user replied with feedback or a question instead of approving.',
     '- If it is feedback on the plan: revise the plan (delegate to `frontend-workflow:frontend-architect` again with the original goal, the current plan and this feedback, or adjust it yourself if the change is small), then present the full updated plan for approval.',
     '- If it is an unrelated question: answer it, then remind the user that the plan is waiting for their approval.',
+    '- If it is a separate NEW request (a different feature, fix or change, not feedback on this plan): do not revise the plan and do not start the new work. Keep the plan and ask the user exactly: **A plan is waiting for your approval. Reply "approve" to build it, or "cancel" to drop it and then send your new request again.**',
+    'When you present a revised plan:',
     APPROVAL_ASK,
   ].join('\n');
 }

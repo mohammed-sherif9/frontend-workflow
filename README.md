@@ -12,7 +12,7 @@ Subagents are adapted from [VoltAgent/awesome-claude-code-subagents](https://git
 
 ## Autopilot: the workflow runs by itself
 
-You don't need slash commands. Just ask normally ("add a booking summary to the car page", "the checkout button is broken on mobile", "refactor the fleet filters", "غير لون الزرار"). Every request is classified, and the matching pipeline runs automatically:
+You don't need slash commands. Just ask normally ("add a booking summary to the car page", "the checkout button is broken on mobile", "refactor the fleet filters"). Every request is classified, and the matching pipeline runs automatically:
 
 | You ask for… | Detected as | What runs automatically |
 |---|---|---|
@@ -34,10 +34,11 @@ For features and refactors (or every code change, with `approval_scope: all-code
 
 | You reply | What happens |
 |---|---|
-| `approve`, `go ahead`, `yes`, `lgtm`, `موافق`, `تمام`, `يلا`… | building unlocks and the rest of the pipeline runs to the end without stopping |
+| `approve`, `go ahead`, `yes`, `lgtm`, `proceed`… | building unlocks and the rest of the pipeline runs to the end without stopping |
 | `approve, but name the route /deals` | approved, and the extra instruction is applied |
 | anything else (`use zustand instead`, a question…) | treated as feedback: the plan is revised and shown again for approval |
-| `cancel`, `no`, `الغي`… | the task is dropped and nothing is built |
+| a separate new request (`add a dark mode toggle`) | the plan is kept and Claude asks you to `approve` it or `cancel` it and resend the new request |
+| `cancel`, `no`, `stop`… | the task is dropped and nothing is built |
 
 After approval Claude stays inside the plan; if the work needs a significant change to it (different approach, new dependencies, files outside the planned structure), it stops and asks you again.
 
@@ -130,7 +131,7 @@ Requirements: Node 18+ (the hooks are plain Node scripts). The verify gates use 
 
 ## Commands (optional with autopilot on)
 
-Just talking to Claude is enough. The commands are for when you want to force a specific path:
+Just talking to Claude is enough. The commands are for when you want to force a specific path. Only these namespaced commands pick a workflow mode; bare names like `/review` or `/plan` belong to Claude Code or other plugins and are left alone:
 
 | Command | What it does |
 |---|---|
