@@ -1,7 +1,7 @@
 {
   "name": "frontend-lead",
   "displayName": "Frontend Lead Workflow",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Lead-frontend-engineer workflow for Next.js/React/TypeScript with an autopilot: every feature, refactor, fix or change is routed through plan, build, test, verify and review automatically, by subagents with hook-enforced roles.",
   "author": {
     "name": "Mohamed Okasha"
