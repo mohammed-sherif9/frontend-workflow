@@ -1,7 +1,8 @@
 // UserPromptSubmit: classify every request and inject the matching pipeline, so the workflow
-// starts by itself for features, refactors, fixes and code changes.
+// starts by itself for features, refactors, fixes and code changes. While a plan waits for
+// approval, the user's reply decides: explicit approval unlocks building, anything else revises.
 import { readInput, loadState, saveState, options } from './lib.mjs';
-import { routeTask, pipelineBrief } from './autopilot.mjs';
+import { routeTask, pipelineBrief, approvalBrief } from './autopilot.mjs';
 
 const input = readInput();
 if (!options().autopilot) process.exit(0);
@@ -15,9 +16,9 @@ if (state.pendingNotice) {
   state.pendingNotice = null;
 }
 
-const { task, continued } = routeTask(state, input);
+const { task, continued, approval } = routeTask(state, input);
 saveState(input, state);
-parts.push(pipelineBrief(task, continued));
+parts.push(approval ? approvalBrief(task, approval) : pipelineBrief(task, continued));
 
 process.stdout.write(
   JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: parts.join('\n\n') } }),

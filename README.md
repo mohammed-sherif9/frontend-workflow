@@ -14,13 +14,30 @@ You don't need slash commands. Just ask normally ("add a booking summary to the 
 
 | You ask for… | Detected as | What runs automatically |
 |---|---|---|
-| a new page, component, flow, form, filter… | **feature** | plan (`frontend-architect`) → build (builders) → tests (`test-automator`) → verify → `code-reviewer`, `architect-reviewer`, `qa-expert` + routed specialists → `surgeon-reviewer` → report |
-| refactor / clean up / restructure / rename | **refactor** | plan → `refactoring-specialist` / builders → verify (existing tests must still pass) → code + architecture review → `surgeon-reviewer` |
+| a new page, component, flow, form, filter… | **feature** | plan (`frontend-architect`) → **you approve** → build (builders) → tests (`test-automator`) → verify → `code-reviewer`, `architect-reviewer`, `qa-expert` + routed specialists → `surgeon-reviewer` → report |
+| refactor / clean up / restructure / rename | **refactor** | plan → **you approve** → `refactoring-specialist` / builders → verify (existing tests must still pass) → code + architecture review → `surgeon-reviewer` |
 | fix / bug / broken / error | **fix** | `debugger` if unclear → regression test → minimal fix → verify → `code-reviewer` → `surgeon-reviewer` |
 | change / update / style / move / add a small thing | **change** | builder → tests if new files were created → verify → `code-reviewer` + routed specialists |
 | `quick: …` | **quick** | Claude may edit directly → verify → `code-reviewer` |
 | a question | **question** | normal answer; if it turns into a code change, the workflow kicks in |
 | `… #no-workflow` | **off** | no workflow for this request (role guards still apply) |
+
+### You approve the plan first
+
+For features and refactors (or every code change, with `approval_scope: all-code-changes`), the workflow has exactly **one** stop: the plan.
+
+1. Claude plans with `frontend-architect` and shows you the full plan: goal, acceptance criteria, file tree, contracts, tasks with their owner roles, reviewers, risks and open questions. It ends with **Reply "approve" to start building, or tell me what to change.**
+2. Until you approve, building is locked: builders, the tester and the refactorer are blocked, and Claude cannot write code itself.
+3. Your reply decides what happens:
+
+| You reply | What happens |
+|---|---|
+| `approve`, `go ahead`, `yes`, `lgtm`, `موافق`, `تمام`, `يلا`… | building unlocks and the rest of the pipeline runs to the end without stopping |
+| `approve, but name the route /deals` | approved, and the extra instruction is applied |
+| anything else (`use zustand instead`, a question…) | treated as feedback: the plan is revised and shown again for approval |
+| `cancel`, `no`, `الغي`… | the task is dropped and nothing is built |
+
+After approval Claude stays inside the plan; if the work needs a significant change to it (different approach, new dependencies, files outside the planned structure), it stops and asks you again.
 
 **Specialist reviewers are added automatically from the files that changed:** `.tsx` → accessibility; pages, layouts, `next.config` → performance; `page`/`layout`/`sitemap`/`robots`/metadata → SEO; `api`, `server`, actions, auth, middleware, env, forms → security; new files or `index.ts` → architecture; dependency changes → `dependency-manager`.
 
@@ -129,7 +146,8 @@ Change in `/plugin` → frontend-lead → configure:
 | Setting | Default | Effect |
 |---|---|---|
 | `autopilot` | on | classify every request and run its workflow automatically |
-| `plan_approval` | off | on = for features/refactors Claude stops after the plan and waits for your "go ahead" before building |
+| `plan_approval` | **on** | Claude stops after the plan; nothing is built until you explicitly approve it (see below) |
+| `approval_scope` | `features-and-refactors` | `all-code-changes` = fixes and small changes are also planned and need your approval (`quick:` edits never do) |
 | `max_gate_rounds` | 8 | how many times per task the gates can send Claude back before reporting the open steps to you |
 | `strict_delegation` | off | on = the lead may only write docs; all code goes through subagents |
 | `review_gate` | on | lead cannot finish until a reviewer ran after the last code change |

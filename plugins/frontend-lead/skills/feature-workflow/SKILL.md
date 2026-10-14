@@ -22,7 +22,9 @@ With autopilot on (the default), every request is classified for you and the mat
 Restate the goal and acceptance criteria as testable bullets. Read the project `CLAUDE.md` and the affected code. Ask the user only about real ambiguities (one short question, with your recommended default).
 
 ## 2. Plan
-Delegate to `frontend-architect` with the goal, criteria and known constraints. Check the plan against the standards yourself. For medium/large work, show the plan to the user and wait for approval before building.
+Delegate to `frontend-architect` with the goal, criteria and known constraints. Check the plan against the standards yourself.
+
+**Approval (on by default for features and refactors):** show the user the full plan (goal, acceptance criteria, file tree, contracts, server/client split, tasks with owner roles, reviewers, risks, open questions with your proposed defaults) and end with: **Reply "approve" to start building, or tell me what to change.** Then stop. Building is locked by the hooks until the user approves. If they reply with feedback, revise the plan and ask again. After approval, run every remaining step without stopping, and stay inside the approved plan: a significant deviation (different approach, new dependency, files outside the planned structure) needs the user's approval again.
 
 ## 3. Build (delegate with a strict brief)
 

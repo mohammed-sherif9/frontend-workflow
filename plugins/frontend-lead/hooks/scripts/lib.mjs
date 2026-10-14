@@ -59,7 +59,8 @@ export function options() {
     verifyOnStop: truthy(env.CLAUDE_PLUGIN_OPTION_VERIFY_ON_STOP ?? env.FRONTEND_LEAD_VERIFY_ON_STOP, true),
     lintOnEdit: truthy(env.CLAUDE_PLUGIN_OPTION_LINT_ON_EDIT ?? env.FRONTEND_LEAD_LINT_ON_EDIT, true),
     autopilot: truthy(env.CLAUDE_PLUGIN_OPTION_AUTOPILOT ?? env.FRONTEND_LEAD_AUTOPILOT, true),
-    planApproval: truthy(env.CLAUDE_PLUGIN_OPTION_PLAN_APPROVAL ?? env.FRONTEND_LEAD_PLAN_APPROVAL, false),
+    planApproval: truthy(env.CLAUDE_PLUGIN_OPTION_PLAN_APPROVAL ?? env.FRONTEND_LEAD_PLAN_APPROVAL, true),
+    approvalScope: String(env.CLAUDE_PLUGIN_OPTION_APPROVAL_SCOPE ?? env.FRONTEND_LEAD_APPROVAL_SCOPE ?? 'features-and-refactors').trim(),
     maxGateRounds: Math.max(1, Number(env.CLAUDE_PLUGIN_OPTION_MAX_GATE_ROUNDS ?? env.FRONTEND_LEAD_MAX_GATE_ROUNDS) || 8),
   };
 }

@@ -5,7 +5,7 @@ import {
   readInput, pass, block, loadState, saveState, projectRoot, options,
   typecheck, eslint, relatedTests, summarize,
 } from './lib.mjs';
-import { missingSteps, plannerDone, modeRules, taskChanges } from './autopilot.mjs';
+import { missingSteps, plannerDone, taskChanges, approvalRequired, APPROVAL_ASK } from './autopilot.mjs';
 
 const input = readInput();
 const opts = options();
@@ -14,10 +14,19 @@ const task = state.task || { mode: 'none', startedAt: 0, rounds: 0 };
 
 if (task.mode === 'off') pass();
 
-// Waiting for the user to approve the plan is a legitimate place to stop.
-if (opts.planApproval && modeRules(task.mode).plan && plannerDone(state, task) && !task.approved
-  && taskChanges(state, task).every((c) => c.category !== 'source' && c.category !== 'test')) {
+// Waiting for the user to approve the plan is the one legitimate stop in an approval task.
+if (approvalRequired(task.mode) && !task.approved && task.status !== 'done') {
+  if (!plannerDone(state, task)) pass(); // e.g. Claude asked a clarifying question before planning
   task.status = 'awaiting-approval';
+  const msg = String(input.last_assistant_message || '');
+  const askedForApproval = /approv|موافق|اعتماد/i.test(msg);
+  if (!askedForApproval && (task.approvalAsks || 0) < 2) {
+    task.approvalAsks = (task.approvalAsks || 0) + 1;
+    state.task = task;
+    saveState(input, state);
+    block(`The plan is ready but you have not asked the user to approve it.\n${APPROVAL_ASK}`);
+  }
+  state.task = task;
   saveState(input, state);
   pass();
 }

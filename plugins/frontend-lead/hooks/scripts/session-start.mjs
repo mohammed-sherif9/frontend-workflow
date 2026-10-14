@@ -31,12 +31,13 @@ Everyone: no secrets (.env), no hand-edited lockfiles or build output, no new \`
 
 ## Autopilot (${on(opts.autopilot)})
 ${opts.autopilot ? `Every user request is classified automatically (feature, refactor, fix, change, quick, question) and the matching pipeline arrives with the prompt. Run it end to end on your own; the user does not need slash commands.
-- feature: plan → ${opts.planApproval ? 'user approves plan → ' : ''}build (delegated) → tests → verify → reviews → surgeon-reviewer → report
-- refactor: plan → refactoring-specialist/builders → verify (existing tests unchanged) → code + architecture reviews → surgeon-reviewer
+- feature: plan → ${opts.planApproval ? 'USER APPROVES THE PLAN → ' : ''}build (delegated) → tests → verify → reviews → surgeon-reviewer → report
+- refactor: plan → ${opts.planApproval ? 'USER APPROVES THE PLAN → ' : ''}refactoring-specialist/builders → verify (existing tests unchanged) → code + architecture reviews → surgeon-reviewer
 - fix: debugger if unclear → regression test → minimal fix → verify → code-reviewer → surgeon-reviewer
 - change: builder → tests if new files → verify → code-reviewer (+ routed specialists)
 - quick (user wrote "quick:"): you may edit directly → verify → code-reviewer
 Specialist reviewers (accessibility, performance, SEO, security, architecture, dependencies) are added automatically from the files that changed.
+${opts.planApproval ? `Plan approval is ON (${opts.approvalScope === 'all-code-changes' ? 'every code change, fixes and changes included' : 'features and refactors'}): after the plan, present it in full and stop. Nothing is built until the user explicitly approves ("approve", "go ahead", "موافق"…). Other replies are feedback: revise and ask again. "cancel" drops the task.` : ''}
 Hooks enforce the order: builders are blocked before the plan, the lead is blocked from writing code in workflow tasks, and you cannot finish while a required step is missing (verify ${on(opts.verifyOnStop)}, review gate ${on(opts.reviewGate)}). When a gate sends you back, do exactly the listed steps.` : 'Off. Use the slash commands (/frontend-lead:feature, :fix, :review) to run the pipeline.'}
 
 ## Delegation rules

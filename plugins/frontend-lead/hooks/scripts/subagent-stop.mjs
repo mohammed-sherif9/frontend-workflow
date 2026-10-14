@@ -4,6 +4,7 @@ import {
   readInput, pass, block, resolveRole, loadState, saveState, projectRoot,
   eslint, typecheck, runTests, summarize,
 } from './lib.mjs';
+import { approvalRequired } from './autopilot.mjs';
 
 const input = readInput();
 const { role, agent } = resolveRole(input);
@@ -26,6 +27,13 @@ if ((role === 'builder' || role === 'refactorer' || role === 'tester') && mine.l
 }
 
 state.events.push({ agent, role, at: Date.now(), wrote: mine.length });
+
+// A finished plan that needs the user's approval puts the task on hold until they approve.
+if (role === 'planner' && state.task && state.task.status !== 'done'
+  && approvalRequired(state.task.mode) && !state.task.approved) {
+  state.task.status = 'awaiting-approval';
+  state.task.planAt = Date.now();
+}
 if (state.events.length > 400) state.events = state.events.slice(-400);
 saveState(input, state);
 pass();

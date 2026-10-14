@@ -1,7 +1,7 @@
 {
   "name": "frontend-lead",
   "displayName": "Frontend Lead Workflow",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Lead-frontend-engineer workflow for Next.js/React/TypeScript with an autopilot: every feature, refactor, fix or change is routed through plan, build, test, verify and review automatically, by subagents with hook-enforced roles.",
   "author": {
     "name": "Mohamed Okasha"
@@ -26,8 +26,18 @@
     "plan_approval": {
       "type": "boolean",
       "title": "Plan approval",
-      "description": "For features and refactors, stop after the plan and wait for your reply before any code is written.",
-      "default": false
+      "description": "Stop after the plan and wait for your explicit approval (\"approve\") before any code is written. Feedback revises the plan; \"cancel\" drops the task.",
+      "default": true
+    },
+    "approval_scope": {
+      "type": "string",
+      "title": "Approval scope",
+      "description": "Which requests need an approved plan: features and refactors only, or every code change (fixes and small changes get planned too). Quick edits never do.",
+      "options": [
+        "features-and-refactors",
+        "all-code-changes"
+      ],
+      "default": "features-and-refactors"
     },
     "max_gate_rounds": {
       "type": "number",

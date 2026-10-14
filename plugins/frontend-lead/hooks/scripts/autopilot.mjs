@@ -51,22 +51,64 @@ export function modeRules(mode) {
   return modes.change;
 }
 
-/** Start a new task, or continue the open one when the user is just answering or approving. */
+/** Does this mode require a plan from frontend-architect? */
+export function planRequired(mode) {
+  if (modeRules(mode).plan && CODE_MODES.includes(mode)) return true;
+  // With approval scope "all-code-changes", fixes and changes are planned (and approved) too.
+  return options().approvalScope === 'all-code-changes' && (mode === 'fix' || mode === 'change');
+}
+
+/** Does this mode require the user's explicit approval of the plan before any code is written? */
+export function approvalRequired(mode) {
+  return options().planApproval && planRequired(mode);
+}
+
+// Explicit answers to "do you approve this plan?" (English and Egyptian Arabic).
+// `\b` does not work for Arabic letters in JS, so word ends are matched explicitly.
+const END = '(?=$|[\\s,.!?:;،؛-])';
+const APPROVE = new RegExp(`^\\s*(approved?|i approve|lgtm|looks good|go( ahead)?|proceed|start( building| work)?|ship it|yes|yep|yeah|ok(ay)?|sure|do it|confirm(ed)?|موافق|تمام|اوك|أوك|ماشي|يلا|إبدأ|ابدأ|ابدا|كمل|كمّل|نفذ|نفّذ|اعتمد|معتمد|اه|أه|ايوه|أيوه)${END}`, 'iu');
+const REJECT = new RegExp(`^\\s*(no|nope|reject(ed)?|cancel|stop|abort|don'?t|never ?mind|forget it|لا|لأ|الغي|إلغي|الغاء|إلغاء|بلاش|وقف)${END}`, 'iu');
+
+/**
+ * Start a new task, or continue the open one.
+ * While a plan is awaiting approval, only an explicit approval unlocks building;
+ * anything else is treated as feedback on the plan (or a rejection).
+ * Returns { task, continued, approval: 'approved' | 'feedback' | 'rejected' | null }.
+ */
 export function routeTask(state, input) {
-  const mode = classify(input.prompt);
+  const prompt = String(input.prompt || '');
+  const mode = classify(prompt);
   const now = Date.now();
   const open = state.task && state.task.status !== 'done' && CODE_MODES.includes(state.task.mode);
-  const followUp = ['none', 'question'].includes(mode) && String(input.prompt || '').length < 400;
 
+  if (open && state.task.status === 'awaiting-approval' && !prompt.trim().startsWith('/')) {
+    const t = state.task;
+    t.promptId = input.prompt_id || null;
+    t.rounds = 0;
+    if (APPROVE.test(prompt) && !REJECT.test(prompt)) {
+      t.approved = true;
+      t.approvedAt = now;
+      t.status = 'active';
+      const notes = prompt.replace(APPROVE, '').replace(/^[\s,.!?:;،؛-]+/u, '').trim();
+      // Keep real instructions ("but name the route /deals"), drop filler ("please", "ابدأ").
+      t.approvalNotes = notes && !/^(please|thanks|thank you|now)$/i.test(notes) && !APPROVE.test(notes) ? notes : null;
+      return { task: t, continued: true, approval: 'approved' };
+    }
+    if (REJECT.test(prompt) && prompt.length < 120) {
+      t.status = 'done';
+      t.cancelled = true;
+      return { task: t, continued: true, approval: 'rejected' };
+    }
+    t.feedback = prompt.slice(0, 2000);
+    return { task: t, continued: true, approval: 'feedback' };
+  }
+
+  const followUp = ['none', 'question'].includes(mode) && prompt.length < 400;
   if (open && followUp) {
     const t = state.task;
     t.promptId = input.prompt_id || null;
     t.rounds = 0;
-    if (t.status === 'awaiting-approval') {
-      t.approved = true;
-      t.status = 'active';
-    }
-    return { task: t, continued: true };
+    return { task: t, continued: true, approval: null };
   }
 
   const task = {
@@ -75,11 +117,11 @@ export function routeTask(state, input) {
     promptId: input.prompt_id || null,
     startedAt: now,
     rounds: 0,
-    approved: !options().planApproval,
+    approved: !approvalRequired(mode),
     status: CODE_MODES.includes(mode) ? 'active' : 'done',
   };
   state.task = task;
-  return { task, continued: false };
+  return { task, continued: false, approval: null };
 }
 
 export function taskEvents(state, task) {
@@ -138,7 +180,7 @@ export function missingSteps(state, task) {
   const ranAfter = (agent, at) => events.some((e) => e.agent === agent && e.at > at);
   const steps = [];
 
-  if (rules.plan && !events.some((e) => e.role === 'planner')) {
+  if (planRequired(mode) && !events.some((e) => e.role === 'planner')) {
     steps.push({ id: 'plan', text: 'Plan the change: delegate to `frontend-lead:frontend-architect` (it should also check what was already built).' });
   }
 
@@ -173,10 +215,40 @@ export function missingSteps(state, task) {
   return { steps, needsVerify, lastCodeAt, reviewers };
 }
 
+/** How Claude must present a plan for approval. */
+export const APPROVAL_ASK = [
+  'Present the plan to the user for approval, then STOP. Show it in full, not a summary: goal, acceptance criteria, files to create/change (tree), key types/contracts, server/client split, the task list with the owner role of each task, reviewers that will run, risks and open questions.',
+  'End your message with exactly this line: **Reply "approve" to start building, or tell me what to change.**',
+  'Do not delegate to builders, the tester or the refactorer and do not write code until the user approves; the hooks block it.',
+].join('\n');
+
+/** Text the router injects for a reply to a plan that is awaiting approval. */
+export function approvalBrief(task, approval) {
+  if (approval === 'approved') {
+    return [
+      `# frontend-lead autopilot: plan APPROVED by the user (${task.mode})`,
+      'Building is unlocked. Continue the workflow from the build step: delegate tasks to their owner roles with strict briefs, then tests, verify, reviews and the final gate, and finish with the report.',
+      task.approvalNotes ? `The user added these notes with the approval; apply them: "${task.approvalNotes}"` : '',
+      'Stay inside the approved plan. If the work needs a significant change to the plan (new files outside its structure, a different approach, new dependencies), stop and ask the user before doing it.',
+    ].filter(Boolean).join('\n\n');
+  }
+  if (approval === 'rejected') {
+    return 'frontend-lead autopilot: the user REJECTED the plan. The task is cancelled. Acknowledge briefly, do not write or delegate any code, and ask whether they want a different approach.';
+  }
+  return [
+    `# frontend-lead autopilot: plan still AWAITING APPROVAL (${task.mode})`,
+    'The user replied with feedback or a question instead of approving.',
+    '- If it is feedback on the plan: revise the plan (delegate to `frontend-lead:frontend-architect` again with the original goal, the current plan and this feedback, or adjust it yourself if the change is small), then present the full updated plan for approval.',
+    '- If it is an unrelated question: answer it, then remind the user that the plan is waiting for their approval.',
+    APPROVAL_ASK,
+  ].join('\n');
+}
+
 /** Text the router injects so Claude runs the pipeline without being asked. */
 export function pipelineBrief(task, continued) {
   const mode = task.mode;
   const opts = options();
+  const needsApproval = approvalRequired(mode);
   if (mode === 'off') return 'frontend-lead autopilot is OFF for this request (#no-workflow). Role guards still apply.';
   if (mode === 'plan') return 'frontend-lead autopilot: PLAN-ONLY request. Delegate to frontend-lead:frontend-architect, review the plan, present it. Do not write or delegate any code.';
   if (mode === 'review') return 'frontend-lead autopilot: REVIEW-ONLY request. Run the reviewers and report. Do not change code unless the user asks.';
@@ -188,13 +260,15 @@ export function pipelineBrief(task, continued) {
   const r = modeRules(mode);
   const lines = [];
   lines.push(`# frontend-lead autopilot: ${mode.toUpperCase()} ${continued ? '(continuing the open task)' : ''}`.trim());
-  lines.push('Run the whole workflow below automatically, without waiting for slash commands. Do not stop between steps to ask permission unless a step says so. Hooks block you if a step is skipped or out of order.');
+  lines.push(needsApproval
+    ? 'Run this workflow automatically, without waiting for slash commands. It has ONE mandatory stop: after the plan, the user must approve it before any code is written. After approval, run every remaining step without stopping. Hooks block you if a step is skipped or out of order.'
+    : 'Run the whole workflow below automatically, without waiting for slash commands. Do not stop between steps to ask permission unless a step says so. Hooks block you if a step is skipped or out of order.');
   const steps = [];
   steps.push('Understand: restate the goal + testable acceptance criteria (briefly, in your reply). Ask the user only if something is genuinely ambiguous.');
-  if (r.plan) {
-    steps.push('Plan: delegate to `frontend-lead:frontend-architect`.' + (opts.planApproval
-      ? ' Then show the plan and STOP for the user\'s approval (builders are blocked until they reply).'
-      : ' Check the plan against the standards and continue straight to building.'));
+  if (planRequired(mode)) {
+    steps.push('Plan: delegate to `frontend-lead:frontend-architect`, then check the plan against the standards yourself.' + (needsApproval
+      ? ` Then get approval:\n${APPROVAL_ASK.split('\n').map((l) => `   ${l}`).join('\n')}`
+      : ' Continue straight to building.'));
   }
   if (mode === 'fix') steps.push('Diagnose: if the cause is not obvious, delegate to `frontend-lead:debugger` first.');
   if (r.tests === 'always') steps.push(mode === 'fix'
