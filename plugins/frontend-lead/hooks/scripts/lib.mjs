@@ -58,6 +58,9 @@ export function options() {
     reviewGate: truthy(env.CLAUDE_PLUGIN_OPTION_REVIEW_GATE ?? env.FRONTEND_LEAD_REVIEW_GATE, true),
     verifyOnStop: truthy(env.CLAUDE_PLUGIN_OPTION_VERIFY_ON_STOP ?? env.FRONTEND_LEAD_VERIFY_ON_STOP, true),
     lintOnEdit: truthy(env.CLAUDE_PLUGIN_OPTION_LINT_ON_EDIT ?? env.FRONTEND_LEAD_LINT_ON_EDIT, true),
+    autopilot: truthy(env.CLAUDE_PLUGIN_OPTION_AUTOPILOT ?? env.FRONTEND_LEAD_AUTOPILOT, true),
+    planApproval: truthy(env.CLAUDE_PLUGIN_OPTION_PLAN_APPROVAL ?? env.FRONTEND_LEAD_PLAN_APPROVAL, false),
+    maxGateRounds: Math.max(1, Number(env.CLAUDE_PLUGIN_OPTION_MAX_GATE_ROUNDS ?? env.FRONTEND_LEAD_MAX_GATE_ROUNDS) || 8),
   };
 }
 
@@ -76,6 +79,16 @@ export function config() {
         base.roles = { ...base.roles, ...(extra.roles || {}) };
         for (const [k, v] of Object.entries(extra.paths || {})) base.paths[k] = [...(base.paths[k] || []), ...v];
         if (extra.unknownSubagentRole) base.unknownSubagentRole = extra.unknownSubagentRole;
+        if (extra.autopilot) {
+          const ap = base.autopilot;
+          for (const [mode, rules] of Object.entries(extra.autopilot.modes || {})) {
+            ap.modes[mode] = { ...(ap.modes[mode] || {}), ...rules };
+          }
+          for (const [intent, patterns] of Object.entries(extra.autopilot.intents || {})) {
+            ap.intents[intent] = [...(ap.intents[intent] || []), ...patterns];
+          }
+          if (extra.autopilot.routing) ap.routing = [...ap.routing, ...extra.autopilot.routing];
+        }
       } catch {
         /* ignore malformed project override */
       }
@@ -83,6 +96,17 @@ export function config() {
     CONFIG = base;
   }
   return CONFIG;
+}
+
+/** Name without the plugin prefix: "frontend-lead:code-reviewer" -> "code-reviewer". */
+export function bareAgentName(raw) {
+  const s = String(raw || '');
+  return s.includes(':') ? s.slice(s.lastIndexOf(':') + 1) : s;
+}
+
+export function roleOfAgent(name) {
+  const cfg = config();
+  return cfg.agents[bareAgentName(name)] || cfg.unknownSubagentRole || 'reviewer';
 }
 
 /** Returns { role, agent } for the current hook call. Main session = lead. */
@@ -179,11 +203,22 @@ function stateFile(input) {
 }
 
 export function loadState(input) {
+  let s;
   try {
-    return JSON.parse(fs.readFileSync(stateFile(input), 'utf8'));
+    s = JSON.parse(fs.readFileSync(stateFile(input), 'utf8'));
   } catch {
-    return { changes: [], reviews: [], verifiedAt: 0 };
+    s = {};
   }
+  return {
+    changes: [],
+    events: [],
+    created: {},
+    deps: [],
+    task: null,
+    verifiedAt: 0,
+    pendingNotice: null,
+    ...s,
+  };
 }
 
 export function saveState(input, state) {

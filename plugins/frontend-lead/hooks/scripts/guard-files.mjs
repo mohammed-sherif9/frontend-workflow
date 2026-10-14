@@ -1,10 +1,13 @@
 // PreToolUse for Read | Edit | Write | MultiEdit | NotebookEdit.
 // Enforces: secrets are never read or written, generated/lock files are never hand-edited,
 // each role writes only its own kind of file, and banned code patterns are never introduced.
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   readInput, decide, pass, resolveRole, roleRules, relPath, categorize,
-  writtenText, contentViolations,
+  writtenText, contentViolations, loadState, saveState, options, projectRoot,
 } from './lib.mjs';
+import { modeRules, CODE_MODES } from './autopilot.mjs';
 
 const input = readInput();
 const tool = input.tool_name || '';
@@ -49,6 +52,29 @@ if (category === 'protected') {
 }
 
 const rules = roleRules(role);
+const state = loadState(input);
+
+// Autopilot: in a workflow task the lead delegates code to the owning role.
+if (role === 'lead' && options().autopilot && (category === 'source' || category === 'test')) {
+  const task = state.task;
+  const mode = task?.mode || 'none';
+  if (mode === 'plan' || mode === 'review') {
+    decide('deny', `This is a ${mode}-only request: no code changes. Present the result and let the user decide.`);
+  }
+  const lockedForLead = (CODE_MODES.includes(mode) && !modeRules(mode).leadWritesCode) || mode === 'none' || mode === 'question';
+  if (lockedForLead) {
+    if (!task || !CODE_MODES.includes(mode)) {
+      // The request turned into a code change: start a "change" task so the gates apply.
+      state.task = { id: `${Date.now()}`, mode: 'change', promptId: input.prompt_id || null, startedAt: Date.now(), rounds: 0, approved: true, status: 'active' };
+      saveState(input, state);
+    }
+    const owner = category === 'test'
+      ? 'frontend-lead:test-automator'
+      : 'the builder that owns it (frontend-lead:nextjs-developer for routes/server/metadata, frontend-lead:react-specialist for components/hooks, frontend-lead:typescript-pro for types/schemas/libs, frontend-lead:refactoring-specialist for refactors)';
+    decide('deny', `Autopilot: the lead does not write ${category === 'test' ? 'tests' : 'production code'} in a ${state.task.mode} task. Delegate ${rel} to ${owner} with a brief (goal, exact file scope, acceptance criteria). For a tiny edit the user can prefix the request with "quick:".`);
+  }
+}
+
 if (!rules.write.includes(category)) {
   const owner = {
     test: 'test-automator',
@@ -72,6 +98,13 @@ if (violations.length) {
     decide('ask', `This edit to ${rel} needs approval:\n${list}`);
   }
   decide('deny', `This edit to ${rel} introduces banned code:\n${list}\nRewrite it without these patterns.${isSubagent ? ' If it is truly unavoidable, report why to the lead.' : ' If it is truly unavoidable, explain why to the user and let them make the change.'}`);
+}
+
+// Remember new files: they pull in tests (change mode) and the architecture review.
+if (tool === 'Write' && (category === 'source' || category === 'test')
+  && !fs.existsSync(path.join(projectRoot(input), rel))) {
+  state.created[rel] = Date.now();
+  saveState(input, state);
 }
 
 pass();

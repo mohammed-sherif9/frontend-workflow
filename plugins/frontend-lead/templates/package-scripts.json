@@ -17,6 +17,7 @@
     "analyze": "ANALYZE=true next build",
     "lhci": "lhci autorun",
     "verify": "npm run lint && npm run typecheck && npm run depcruise && npm run test",
+    "review:ai": "node scripts/claude-gate.mjs",
     "prepare": "husky"
   }
 }

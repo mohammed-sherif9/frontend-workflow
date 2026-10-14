@@ -1,6 +1,6 @@
 // PreToolUse for Bash. Blocks dangerous commands for everyone, keeps read-only roles read-only,
 // and keeps git history and dependencies in the lead's (and the user's) hands.
-import { readInput, decide, pass, resolveRole, roleRules } from './lib.mjs';
+import { readInput, decide, pass, resolveRole, roleRules, loadState, saveState } from './lib.mjs';
 
 const input = readInput();
 const cmd = String(input.tool_input?.command || '');
@@ -35,8 +35,13 @@ const DEP_CHANGE = /\b(npm\s+(i|install|add|uninstall|remove|rm|update|up|upgrad
 const GIT_WRITE = /\bgit\s+(add|commit|push|pull|merge|rebase|reset|checkout|switch|restore|stash|cherry-pick|revert|tag|am|apply|clean|rm|mv|branch\s+-[dDmMcC]|worktree\s+(add|remove))\b/;
 const GIT_DANGER = /\bgit\s+(push|reset\s+--hard|clean\s+-[a-zA-Z]*f|checkout\s+(--\s+)?\.(\s|$)|restore\s+(--\S+\s+)*\.(\s|$)|branch\s+-D)\b/;
 
+// Review-only and plan-only tasks (including the unattended /frontend-lead:gate) make the lead read-only too.
+const leadTask = role === 'lead' ? loadState(input).task : null;
+const leadReadOnly = leadTask && ['review', 'plan'].includes(leadTask.mode);
+const PR_COMMENT = /^\s*gh\s+pr\s+(comment|review)\b/;
+
 // 3. Read-only roles: nothing that changes files, git or dependencies.
-if (rules.bash === 'readonly') {
+if (rules.bash === 'readonly' || (leadReadOnly && !PR_COMMENT.test(cmd))) {
   const WRITES = [
     /(^|[^0-9&>])>{1,2}(?!\s*(\/dev\/null|&))/, // output redirection into a file
     /\btee\b/,
@@ -64,7 +69,12 @@ if (rules.bash === 'build') {
 }
 
 // 5. Lead: risky but sometimes legitimate -> ask the user.
-if (has(DEP_CHANGE)) decide('ask', 'This changes dependencies. Run dependency-manager review first, then approve if you agree.');
+if (has(DEP_CHANGE)) {
+  const state = loadState(input);
+  state.deps.push({ cmd: cmd.slice(0, 200), at: Date.now() }); // pulls dependency-manager into the review
+  saveState(input, state);
+  decide('ask', 'This changes dependencies. Run dependency-manager review first, then approve if you agree.');
+}
 if (has(GIT_DANGER)) decide('ask', 'This git command can discard work or publish history. Approve only if you meant it.');
 if (/\brm\s+-[a-zA-Z]*r/.test(cmd)) decide('ask', 'Recursive delete. Check the path before approving.');
 

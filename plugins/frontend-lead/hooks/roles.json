@@ -1,6 +1,5 @@
 {
   "$comment": "Role map for the frontend-lead hooks. Edit this file to change who may write what. Path patterns are JavaScript regular expressions tested against the project-relative path with forward slashes.",
-
   "agents": {
     "frontend-architect": "planner",
     "nextjs-developer": "builder",
@@ -20,22 +19,174 @@
     "qa-expert": "reviewer",
     "debugger": "investigator"
   },
-
   "unknownSubagentRole": "reviewer",
-
   "roles": {
-    "lead":         { "write": ["source", "test", "docs", "asset"], "bash": "lead" },
-    "planner":      { "write": [], "bash": "none" },
-    "builder":      { "write": ["source", "asset"], "bash": "build" },
-    "refactorer":   { "write": ["source"], "bash": "build" },
-    "tester":       { "write": ["test"], "bash": "build" },
-    "docs":         { "write": ["docs"], "bash": "none" },
-    "reviewer":     { "write": [], "bash": "readonly" },
-    "investigator": { "write": [], "bash": "readonly" }
+    "lead": {
+      "write": [
+        "source",
+        "test",
+        "docs",
+        "asset"
+      ],
+      "bash": "lead"
+    },
+    "planner": {
+      "write": [],
+      "bash": "none"
+    },
+    "builder": {
+      "write": [
+        "source",
+        "asset"
+      ],
+      "bash": "build"
+    },
+    "refactorer": {
+      "write": [
+        "source"
+      ],
+      "bash": "build"
+    },
+    "tester": {
+      "write": [
+        "test"
+      ],
+      "bash": "build"
+    },
+    "docs": {
+      "write": [
+        "docs"
+      ],
+      "bash": "none"
+    },
+    "reviewer": {
+      "write": [],
+      "bash": "readonly"
+    },
+    "investigator": {
+      "write": [],
+      "bash": "readonly"
+    }
   },
-
-  "strictDelegationLeadWrite": ["docs"],
-
+  "strictDelegationLeadWrite": [
+    "docs"
+  ],
+  "autopilot": {
+    "$comment": "Each prompt is classified into a mode. The mode decides which steps are required before the lead may finish. Reviewers in 'routing' are added automatically from the files that changed.",
+    "modes": {
+      "feature": {
+        "plan": true,
+        "tests": "always",
+        "leadWritesCode": false,
+        "reviewers": [
+          "code-reviewer",
+          "architect-reviewer",
+          "qa-expert"
+        ],
+        "final": "surgeon-reviewer",
+        "docs": true
+      },
+      "refactor": {
+        "plan": true,
+        "tests": "never",
+        "leadWritesCode": false,
+        "reviewers": [
+          "code-reviewer",
+          "architect-reviewer"
+        ],
+        "final": "surgeon-reviewer",
+        "docs": false
+      },
+      "fix": {
+        "plan": false,
+        "tests": "always",
+        "leadWritesCode": false,
+        "reviewers": [
+          "code-reviewer"
+        ],
+        "final": "surgeon-reviewer",
+        "docs": false
+      },
+      "change": {
+        "plan": false,
+        "tests": "new-files",
+        "leadWritesCode": false,
+        "reviewers": [
+          "code-reviewer"
+        ],
+        "final": null,
+        "docs": false
+      },
+      "quick": {
+        "plan": false,
+        "tests": "never",
+        "leadWritesCode": true,
+        "reviewers": [
+          "code-reviewer"
+        ],
+        "final": null,
+        "docs": false,
+        "noRouting": true
+      }
+    },
+    "intents": {
+      "fix": [
+        "\\b(fix|bug|broken|crash(es|ing)?|error|exception|not working|doesn'?t work|isn'?t working|fail(s|ing|ed)?|regression|wrong|incorrect|issue)\\b",
+        "صلح|صلّح|مشكل|ايرور|إيرور|خطأ|غلط|مش شغال|بايظ|عطل"
+      ],
+      "refactor": [
+        "\\b(refactor(ing)?|clean ?up|restructure|reorganize|rename|extract|split up|simplify|decouple|deduplicate|migrate|modernize|move .{1,40} (to|into))\\b",
+        "ريفاكتور|نظف|نضف|اعادة هيكلة|إعادة هيكلة|رتب الكود|قسم"
+      ],
+      "feature": [
+        "\\b(add|build|create|implement|introduce|integrate|develop|set up)\\b(\\W+\\w+){0,6}?\\W+(pages?|features?|sections?|components?|flows?|forms?|routes?|endpoints?|filters?|modals?|dialogs?|screens?|apis?|integrations?|dashboards?|search|checkout|booking|cart|login|sign ?up|wizard|widgets?|modules?|support|tabs?|steps?|pagination|notifications?)\\b",
+        "\\bnew (page|feature|section|component|flow|form|route|endpoint|filter|modal|screen|tab)\\b",
+        "\\b(allow|let|enable) (users?|customers?|visitors?|admins?|people)\\b",
+        "ضيف|أضف|اضف|اعمل|إعمل|ابني|إبني|صفحة جديدة|فيتشر|ميزة|خاصية"
+      ],
+      "change": [
+        "\\b(add|insert|put|change|update|modify|adjust|tweak|replace|tune|make (it|the|this)|increase|decrease|align|style|restyle|move|show|hide|remove|delete)\\b",
+        "غير|غيّر|عدل|عدّل|حدث|حدّث|شيل|امسح|اخفي|اظهر"
+      ],
+      "question": [
+        "^(what|why|how|explain|is|are|can|could|does|do|did|should|which|where|when|who|tell me|show me how)\\b[^]*\\?\\s*$",
+        "^(ايه|إيه|ليه|ازاي|إزاي|هل|اشرح|إشرح|فين|امتى|مين)"
+      ]
+    },
+    "routing": [
+      {
+        "agent": "accessibility-tester",
+        "files": "\\.(tsx|jsx)$"
+      },
+      {
+        "agent": "performance-engineer",
+        "files": "(^|/)app/.+\\.(tsx|jsx)$|(^|/)next\\.config\\.[cm]?[jt]s$|(^|/)(fonts?|images?)/|(^|/)(layout|page)\\.(tsx|jsx)$",
+        "modes": [
+          "feature",
+          "refactor",
+          "change"
+        ]
+      },
+      {
+        "agent": "seo-specialist",
+        "files": "(^|/)app/(.+/)?(page|layout|sitemap|robots|opengraph-image|twitter-image|manifest|not-found)\\.(tsx?|jsx?)$|(^|/)(seo|metadata|structured-data|json-ld)[^/]*\\.(tsx?|jsx?)$"
+      },
+      {
+        "agent": "security-auditor",
+        "files": "(^|/)(api|server|actions?|auth|session|middleware|route)(/|\\.)|(^|/)(env|config/env)\\.(ts|js)$|(^|/)next\\.config\\.[cm]?[jt]s$|(^|/)(forms?|.*Form)\\b"
+      },
+      {
+        "agent": "architect-reviewer",
+        "files": "(^|/)index\\.(ts|tsx)$",
+        "orCreatedFiles": true
+      },
+      {
+        "agent": "dependency-manager",
+        "files": "(^|/)package\\.json$",
+        "orDependencyChange": true
+      }
+    ]
+  },
   "paths": {
     "secret": [
       "(^|/)\\.env(?!\\.example$)(\\..*)?$",
@@ -75,23 +226,63 @@
       "\\.(ts|tsx|js|jsx|mjs|cjs|css|scss)$"
     ]
   },
-
   "content": {
     "code": [
-      { "id": "any", "re": "(:\\s*any\\b|\\bas\\s+any\\b|<any>|\\bany\\[\\])", "msg": "`any` type. Use a real type, `unknown` plus narrowing, or a generic." },
-      { "id": "ts-suppress", "re": "@ts-(ignore|nocheck|expect-error)", "msg": "TypeScript error suppression. Fix the type error instead." },
-      { "id": "eslint-disable", "re": "eslint-disable", "msg": "ESLint rule disabled inline. Fix the code, or ask the lead/user to change the rule." },
-      { "id": "debugger", "re": "\\bdebugger\\s*;", "msg": "`debugger` statement." }
+      {
+        "id": "any",
+        "re": "(:\\s*any\\b|\\bas\\s+any\\b|<any>|\\bany\\[\\])",
+        "msg": "`any` type. Use a real type, `unknown` plus narrowing, or a generic."
+      },
+      {
+        "id": "ts-suppress",
+        "re": "@ts-(ignore|nocheck|expect-error)",
+        "msg": "TypeScript error suppression. Fix the type error instead."
+      },
+      {
+        "id": "eslint-disable",
+        "re": "eslint-disable",
+        "msg": "ESLint rule disabled inline. Fix the code, or ask the lead/user to change the rule."
+      },
+      {
+        "id": "debugger",
+        "re": "\\bdebugger\\s*;",
+        "msg": "`debugger` statement."
+      }
     ],
     "source": [
-      { "id": "console", "re": "\\bconsole\\.(log|debug|info)\\(", "msg": "`console.log/debug/info` in production code. Use the project logger or remove it." },
-      { "id": "unsafe-html", "re": "dangerouslySetInnerHTML", "msg": "`dangerouslySetInnerHTML` needs explicit approval and sanitization.", "severity": "approval" },
-      { "id": "eval", "re": "\\b(eval|new\\s+Function)\\s*\\(", "msg": "`eval`/`new Function` is not allowed." },
-      { "id": "public-secret", "re": "NEXT_PUBLIC_[A-Z0-9_]*(SECRET|PRIVATE|PASSWORD|TOKEN)", "msg": "A secret-looking value is exposed to the browser through NEXT_PUBLIC_." }
+      {
+        "id": "console",
+        "re": "\\bconsole\\.(log|debug|info)\\(",
+        "msg": "`console.log/debug/info` in production code. Use the project logger or remove it."
+      },
+      {
+        "id": "unsafe-html",
+        "re": "dangerouslySetInnerHTML",
+        "msg": "`dangerouslySetInnerHTML` needs explicit approval and sanitization.",
+        "severity": "approval"
+      },
+      {
+        "id": "eval",
+        "re": "\\b(eval|new\\s+Function)\\s*\\(",
+        "msg": "`eval`/`new Function` is not allowed."
+      },
+      {
+        "id": "public-secret",
+        "re": "NEXT_PUBLIC_[A-Z0-9_]*(SECRET|PRIVATE|PASSWORD|TOKEN)",
+        "msg": "A secret-looking value is exposed to the browser through NEXT_PUBLIC_."
+      }
     ],
     "test": [
-      { "id": "focused-test", "re": "\\b(it|test|describe)\\.only\\(|\\bf(it|describe)\\(", "msg": "Focused test (`.only`). It silently skips the rest of the suite." },
-      { "id": "skipped-test", "re": "\\b(it|test|describe)\\.(skip|todo)\\(|\\bx(it|describe)\\(", "msg": "Skipped test. Fix it or delete it with the lead's approval." }
+      {
+        "id": "focused-test",
+        "re": "\\b(it|test|describe)\\.only\\(|\\bf(it|describe)\\(",
+        "msg": "Focused test (`.only`). It silently skips the rest of the suite."
+      },
+      {
+        "id": "skipped-test",
+        "re": "\\b(it|test|describe)\\.(skip|todo)\\(|\\bx(it|describe)\\(",
+        "msg": "Skipped test. Fix it or delete it with the lead's approval."
+      }
     ]
   }
 }

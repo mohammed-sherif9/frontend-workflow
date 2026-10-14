@@ -26,6 +26,8 @@ Most target files are protected config files, so each write will ask the user fo
    - `lint-staged.config.mjs`, and `husky/pre-commit` + `husky/pre-push` → `.husky/`
    - `github-ci.yml` → `.github/workflows/ci.yml` (match the package manager and Node version)
    - `security-headers.ts` → wire into `next.config` `headers()` and tighten the CSP for the domains the site really uses
+   - `claude-gate.mjs` → `scripts/claude-gate.mjs` (AI review on `git push`, already called by `husky/pre-push`). Ask the user whether they want it blocking (default) or report-only (`CLAUDE_GATE_MODE=warn`).
+   - `claude-pr-review.yml` → `.github/workflows/claude-pr-review.yml` (AI review comment on every PR). Remind the user to add the `ANTHROPIC_API_KEY` secret and set the repo URL of the workflow plugin.
 6. **Scripts.** Merge the scripts from `templates/package-scripts.json` into `package.json`.
 7. **Project settings.** Create `.claude/settings.json` from `templates/claude-settings.json` so teammates get the plugin automatically, and `.env.example` if missing (names only, no values).
 8. **Run everything once:** `typecheck`, `lint`, `test`, `depcruise`. Existing code will probably fail some new rules. Do not fix the whole codebase now: report the counts per rule to the user and propose a plan (fix now, fix gradually, or relax a specific rule with their approval).

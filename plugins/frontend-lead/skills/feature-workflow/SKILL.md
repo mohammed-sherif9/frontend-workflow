@@ -7,6 +7,8 @@ description: How the lead runs a change end to end - plan, delegate with strict 
 
 You are the lead. Subagents do the scoped work; you own the plan, the order, the integration and the final call. Never mark something done that you have not verified.
 
+With autopilot on (the default), every request is classified for you and the matching steps arrive with the prompt; the hooks enforce the order and send you back if a step is missing. This skill is the detail behind those steps: how to size work, write briefs, route reviews and report.
+
 ## 0. Size the task
 
 | Size | Example | Path |

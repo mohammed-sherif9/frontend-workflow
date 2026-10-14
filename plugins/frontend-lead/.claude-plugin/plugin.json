@@ -1,12 +1,42 @@
 {
   "name": "frontend-lead",
   "displayName": "Frontend Lead Workflow",
-  "version": "1.0.0",
-  "description": "Lead-frontend-engineer workflow for Next.js/React/TypeScript: planner, builder, tester, docs and reviewer subagents with hook-enforced role boundaries, verify and review gates, engineering standards and project tooling templates.",
-  "author": { "name": "Mohamed Okasha" },
+  "version": "1.1.0",
+  "description": "Lead-frontend-engineer workflow for Next.js/React/TypeScript with an autopilot: every feature, refactor, fix or change is routed through plan, build, test, verify and review automatically, by subagents with hook-enforced roles.",
+  "author": {
+    "name": "Mohamed Okasha"
+  },
   "license": "MIT",
-  "keywords": ["frontend", "nextjs", "react", "typescript", "code-review", "workflow", "subagents"],
+  "keywords": [
+    "frontend",
+    "nextjs",
+    "react",
+    "typescript",
+    "code-review",
+    "workflow",
+    "subagents"
+  ],
   "userConfig": {
+    "autopilot": {
+      "type": "boolean",
+      "title": "Autopilot",
+      "description": "Classify every request (feature, refactor, fix, change) and run the matching workflow automatically, with hooks enforcing the step order.",
+      "default": true
+    },
+    "plan_approval": {
+      "type": "boolean",
+      "title": "Plan approval",
+      "description": "For features and refactors, stop after the plan and wait for your reply before any code is written.",
+      "default": false
+    },
+    "max_gate_rounds": {
+      "type": "number",
+      "title": "Max gate rounds",
+      "description": "How many times per task the workflow gates may send Claude back to finish missing steps before giving up and reporting them.",
+      "default": 8,
+      "min": 1,
+      "max": 30
+    },
     "strict_delegation": {
       "type": "boolean",
       "title": "Strict delegation",

@@ -1,1 +1,3 @@
 npm run typecheck && npm run depcruise && npm run test
+# AI review of the commits being pushed (blocks on NO SHIP). Remove this line to turn it off.
+node scripts/claude-gate.mjs
