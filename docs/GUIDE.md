@@ -10,6 +10,23 @@ A Claude Code plugin that makes Claude work like a **lead frontend engineer** on
 
 The rules are enforced by hooks, not just written in a prompt. Claude can't skip a step, and a subagent can't step outside its role.
 
+## Getting started
+
+You need access to the private [`mitchdesigns-com/frontend-workflow`](https://github.com/mitchdesigns-com/frontend-workflow) repo, Node 18+, and a machine signed in to GitHub (`gh auth login`).
+
+**1. Install the plugin** (once per machine), in Claude Code:
+
+```
+/plugin marketplace add mitchdesigns-com/frontend-workflow
+/plugin install frontend-workflow@mohamed-frontend
+```
+
+**2. Set up a project** (once per project, optional but recommended): open the project and run `/frontend-workflow:bootstrap`. It inspects the project, shows you a plan, and after your approval adds a project `CLAUDE.md`, strict tooling, tests, CI and `.claude/settings.json`. Run it on a new branch for an existing project.
+
+**3. Commit `.claude/settings.json`.** Teammates who open the project in Claude Code are then offered the plugin automatically, with no commands to type.
+
+**4. Ask for something.** No command needed: "Add a booking summary section to the car page".
+
 ## How it helps
 
 | Without the workflow | With the workflow |
