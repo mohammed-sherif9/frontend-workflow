@@ -1,8 +1,8 @@
 {
-  "$comment": "Copy to <project>/.claude/settings.json and commit it. Teammates who trust the project get the plugin automatically. Replace the repo with where you host the workflow.",
+  "$comment": "Copy to <project>/.claude/settings.json and commit it. Teammates who trust the project get the plugin automatically.",
   "extraKnownMarketplaces": {
     "mohamed-frontend": {
-      "source": { "source": "github", "repo": "YOUR-GITHUB-USER/frontend-workflow" }
+      "source": { "source": "github", "repo": "mitchdesigns-com/frontend-workflow" }
     }
   },
   "enabledPlugins": {

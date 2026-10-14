@@ -116,16 +116,20 @@ Any other subagent (built-in `general-purpose`, other plugins) is treated as a r
 
 ## Install
 
-**1. Put this folder in a git repo** (GitHub, GitLab…), e.g. `YOUR-USER/frontend-workflow`.
+The workflow is hosted at [`mitchdesigns-com/frontend-workflow`](https://github.com/mitchdesigns-com/frontend-workflow) (private: you need access to the repo and a machine signed in to GitHub, e.g. with `gh auth login`).
 
-**2. In Claude Code:**
+**1. Install it in Claude Code** (once per machine):
 ```
-/plugin marketplace add YOUR-USER/frontend-workflow
+/plugin marketplace add mitchdesigns-com/frontend-workflow
 /plugin install frontend-workflow@mohamed-frontend
 ```
-To try it locally first: `/plugin marketplace add /path/to/frontend-workflow`, or start Claude with `claude --plugin-dir /path/to/frontend-workflow/plugins/frontend-workflow`.
+`mohamed-frontend` is the marketplace name defined in this repo, not a GitHub account.
 
-**3. Per project (optional but recommended):** run `/frontend-workflow:bootstrap`. It writes a project `CLAUDE.md`, strict tooling and CI from `templates/`, and `.claude/settings.json` so teammates get the plugin automatically.
+**2. Set up each project** (optional but recommended): run `/frontend-workflow:bootstrap`. It writes a project `CLAUDE.md`, strict tooling and CI from `templates/`, and `.claude/settings.json`.
+
+**Teammates don't need the commands.** Once a project's `.claude/settings.json` is committed (step 2 adds it), anyone who opens that project in Claude Code and trusts it is offered the marketplace and the plugin automatically.
+
+To try a local copy instead: `/plugin marketplace add /path/to/frontend-workflow`, or start Claude with `claude --plugin-dir /path/to/frontend-workflow/plugins/frontend-workflow`.
 
 Requirements: Node 18+ (the hooks are plain Node scripts). The verify gates use the project's own `node_modules/.bin` (eslint, tsc, vitest/jest, prettier); missing tools are skipped, not installed.
 

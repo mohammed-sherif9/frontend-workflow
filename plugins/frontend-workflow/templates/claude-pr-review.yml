@@ -1,7 +1,8 @@
 # Copy to .github/workflows/claude-pr-review.yml
 # Runs the frontend-workflow review gate on every pull request and posts the result as a PR comment.
-# Setup: add the ANTHROPIC_API_KEY secret (or use `claude /install-github-app`), and replace
-# YOUR-GITHUB-USER below with where the frontend-workflow repo is hosted.
+# Setup: add the ANTHROPIC_API_KEY secret (or use `claude /install-github-app`).
+# The workflow plugin is loaded from the private mitchdesigns-com/frontend-workflow repo, so the
+# job needs a token that can read it (the default GITHUB_TOKEN only covers this repository).
 name: Claude PR review
 
 on:
@@ -38,7 +39,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           plugin_marketplaces: |
-            https://github.com/YOUR-GITHUB-USER/frontend-workflow.git
+            https://github.com/mitchdesigns-com/frontend-workflow.git
           plugins: |
             frontend-workflow@mohamed-frontend
           prompt: |
