@@ -1,0 +1,75 @@
+{
+  "name": "frontend-workflow",
+  "displayName": "Frontend Workflow",
+  "version": "2.0.0",
+  "description": "Lead-frontend-engineer workflow for Next.js/React/TypeScript with an autopilot: every feature, refactor, fix or change is routed through plan, build, test, verify and review automatically, by subagents with hook-enforced roles.",
+  "author": {
+    "name": "Mohamed Okasha"
+  },
+  "license": "MIT",
+  "keywords": [
+    "frontend",
+    "nextjs",
+    "react",
+    "typescript",
+    "code-review",
+    "workflow",
+    "subagents"
+  ],
+  "userConfig": {
+    "autopilot": {
+      "type": "boolean",
+      "title": "Autopilot",
+      "description": "Classify every request (feature, refactor, fix, change) and run the matching workflow automatically, with hooks enforcing the step order.",
+      "default": true
+    },
+    "plan_approval": {
+      "type": "boolean",
+      "title": "Plan approval",
+      "description": "Stop after the plan and wait for your explicit approval (\"approve\") before any code is written. Feedback revises the plan; \"cancel\" drops the task.",
+      "default": true
+    },
+    "approval_scope": {
+      "type": "string",
+      "title": "Approval scope",
+      "description": "Which requests need an approved plan: features and refactors only, or every code change (fixes and small changes get planned too). Quick edits never do.",
+      "options": [
+        "features-and-refactors",
+        "all-code-changes"
+      ],
+      "default": "features-and-refactors"
+    },
+    "max_gate_rounds": {
+      "type": "number",
+      "title": "Max gate rounds",
+      "description": "How many times per task the workflow gates may send Claude back to finish missing steps before giving up and reporting them.",
+      "default": 8,
+      "min": 1,
+      "max": 30
+    },
+    "strict_delegation": {
+      "type": "boolean",
+      "title": "Strict delegation",
+      "description": "When on, the main session (lead) may only write docs; all code must go through builder, tester and refactorer subagents.",
+      "default": false
+    },
+    "review_gate": {
+      "type": "boolean",
+      "title": "Review gate",
+      "description": "Block finishing a turn when code changed and no reviewer subagent ran afterwards.",
+      "default": true
+    },
+    "verify_on_stop": {
+      "type": "boolean",
+      "title": "Verify on stop",
+      "description": "Run typecheck, lint and related tests on changed files before the lead can finish a turn.",
+      "default": true
+    },
+    "lint_on_edit": {
+      "type": "boolean",
+      "title": "Format and lint on edit",
+      "description": "Run Prettier and ESLint --fix on every edited file and send remaining errors back immediately.",
+      "default": true
+    }
+  }
+}

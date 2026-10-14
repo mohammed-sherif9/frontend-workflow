@@ -1,10 +1,12 @@
-# frontend-lead workflow
+# frontend-workflow
 
 A reusable Claude Code plugin that makes Claude work like a **lead frontend engineer** on Next.js / React / TypeScript / Tailwind projects: it plans, delegates to specialist subagents with strict roles, verifies, gets the work reviewed, and only then reports done.
 
 Role boundaries are not just instructions. They are **enforced by hooks**: a reviewer cannot edit files, a builder cannot touch tests or configs, nobody can read `.env`, and the lead cannot finish while checks fail or before a review.
 
 Subagents are adapted from [VoltAgent/awesome-claude-code-subagents](https://github.com/VoltAgent/awesome-claude-code-subagents) (MIT, commit `408d3c9`), with role contracts, report formats and tool restrictions added.
+
+**New here? Start with the [guide](docs/GUIDE.md)**: how the workflow works, how to phrase requests, working from a spec, a full example, and troubleshooting. This README is the reference.
 
 ---
 
@@ -39,6 +41,8 @@ For features and refactors (or every code change, with `approval_scope: all-code
 
 After approval Claude stays inside the plan; if the work needs a significant change to it (different approach, new dependencies, files outside the planned structure), it stops and asks you again.
 
+**Spec files are read automatically.** Name `specs/<feature>/spec.md` in a request ("Implement the booking from specs/booking/spec.md") and the router injects the file: every acceptance criterion must map to the plan and have a test, and `qa-expert` reports any criterion without one as a BLOCKER. The full pipeline and spec are sent once per task; follow-ups in the same task get a one-line reminder.
+
 **Specialist reviewers are added automatically from the files that changed:** `.tsx` → accessibility; pages, layouts, `next.config` → performance; `page`/`layout`/`sitemap`/`robots`/metadata → SEO; `api`, `server`, actions, auth, middleware, env, forms → security; new files or `index.ts` → architecture; dependency changes → `dependency-manager`.
 
 **The order is enforced, not suggested:**
@@ -53,7 +57,7 @@ Tested live: a plain request ("Add a formatPrice helper…") made Claude delegat
 
 The autopilot covers work Claude does. For code you write by hand, two automatic gates run the same review:
 
-- **On `git push`**: `scripts/claude-gate.mjs` (installed by `/frontend-lead:bootstrap`, called from `.husky/pre-push`) runs `/frontend-lead:gate` headless on the commits being pushed: checks + routed reviewers + `surgeon-reviewer`, and **blocks the push on NO SHIP**. `CLAUDE_GATE_MODE=warn` reports without blocking; `SKIP_CLAUDE_GATE=1 git push` skips once.
+- **On `git push`**: `scripts/claude-gate.mjs` (installed by `/frontend-workflow:bootstrap`, called from `.husky/pre-push`) runs `/frontend-workflow:gate` headless on the commits being pushed: checks + routed reviewers + `surgeon-reviewer`, and **blocks the push on NO SHIP**. `CLAUDE_GATE_MODE=warn` reports without blocking; `SKIP_CLAUDE_GATE=1 git push` skips once.
 - **On every pull request**: `.github/workflows/claude-pr-review.yml` runs the same gate in GitHub Actions and posts the report as a PR comment.
 
 During these unattended runs the hooks make the shell read-only, so the reviewer can run checks but cannot change files, git state or dependencies.
@@ -63,16 +67,17 @@ During these unattended runs the hooks make the shell read-only, so the reviewer
 ## Folder structure
 
 ```
-frontend-lead-workflow/                 ← git repo = marketplace
+frontend-workflow/                 ← git repo = marketplace
 ├── .claude-plugin/marketplace.json
-└── plugins/frontend-lead/              ← the plugin
+├── docs/GUIDE.md                       ← how it works and how to use it
+└── plugins/frontend-workflow/          ← the plugin
     ├── .claude-plugin/plugin.json      ← metadata + settings (strict delegation, gates)
     ├── agents/                         ← 17 subagents (16 adapted + 1 custom planner)
     ├── skills/
     │   ├── engineering-standards/      ← the standards + 8 reference checklists
     │   ├── feature-workflow/           ← the lead pipeline, brief + report templates
     │   └── bootstrap-project/          ← set up a project's tooling from templates
-    ├── commands/                       ← /frontend-lead:feature, plan, fix, review, ship-check, bootstrap, roles
+    ├── commands/                       ← /frontend-workflow:feature, plan, fix, review, ship-check, bootstrap, roles
     ├── hooks/
     │   ├── hooks.json                  ← wiring
     │   ├── roles.json                  ← who may write what (editable)
@@ -110,16 +115,16 @@ Any other subagent (built-in `general-purpose`, other plugins) is treated as a r
 
 ## Install
 
-**1. Put this folder in a git repo** (GitHub, GitLab…), e.g. `YOUR-USER/frontend-lead-workflow`.
+**1. Put this folder in a git repo** (GitHub, GitLab…), e.g. `YOUR-USER/frontend-workflow`.
 
 **2. In Claude Code:**
 ```
-/plugin marketplace add YOUR-USER/frontend-lead-workflow
-/plugin install frontend-lead@mohamed-frontend
+/plugin marketplace add YOUR-USER/frontend-workflow
+/plugin install frontend-workflow@mohamed-frontend
 ```
-To try it locally first: `/plugin marketplace add /path/to/frontend-lead-workflow`, or start Claude with `claude --plugin-dir /path/to/frontend-lead-workflow/plugins/frontend-lead`.
+To try it locally first: `/plugin marketplace add /path/to/frontend-workflow`, or start Claude with `claude --plugin-dir /path/to/frontend-workflow/plugins/frontend-workflow`.
 
-**3. Per project (optional but recommended):** run `/frontend-lead:bootstrap`. It writes a project `CLAUDE.md`, strict tooling and CI from `templates/`, and `.claude/settings.json` so teammates get the plugin automatically.
+**3. Per project (optional but recommended):** run `/frontend-workflow:bootstrap`. It writes a project `CLAUDE.md`, strict tooling and CI from `templates/`, and `.claude/settings.json` so teammates get the plugin automatically.
 
 Requirements: Node 18+ (the hooks are plain Node scripts). The verify gates use the project's own `node_modules/.bin` (eslint, tsc, vitest/jest, prettier); missing tools are skipped, not installed.
 
@@ -129,19 +134,19 @@ Just talking to Claude is enough. The commands are for when you want to force a 
 
 | Command | What it does |
 |---|---|
-| `/frontend-lead:gate [range]` | unattended review used by the git hook and the PR workflow; ends with `FRONTEND-LEAD VERDICT: SHIP` or `NO SHIP` |
-| `/frontend-lead:feature <request>` | full pipeline: plan → your approval → build → test → verify → review → fix → report |
-| `/frontend-lead:plan <request>` | plan only |
-| `/frontend-lead:fix <bug>` | debugger → regression test → minimal fix → review |
-| `/frontend-lead:review [scope]` | routes the change to the right reviewers, ship / no-ship verdict |
-| `/frontend-lead:ship-check` | runs every gate and reports READY / NOT READY |
-| `/frontend-lead:bootstrap` | sets up a project for this workflow |
-| `/frontend-lead:roles` | shows the role matrix and current settings |
+| `/frontend-workflow:gate [range]` | unattended review used by the git hook and the PR workflow; ends with `FRONTEND-WORKFLOW VERDICT: SHIP` or `NO SHIP` |
+| `/frontend-workflow:feature <request>` | full pipeline: plan → your approval → build → test → verify → review → fix → report |
+| `/frontend-workflow:plan <request>` | plan only |
+| `/frontend-workflow:fix <bug>` | debugger → regression test → minimal fix → review |
+| `/frontend-workflow:review [scope]` | routes the change to the right reviewers, ship / no-ship verdict |
+| `/frontend-workflow:ship-check` | runs every gate and reports READY / NOT READY |
+| `/frontend-workflow:bootstrap` | sets up a project for this workflow |
+| `/frontend-workflow:roles` | shows the role matrix and current settings |
 
 
 ## Settings
 
-Change in `/plugin` → frontend-lead → configure:
+Change in `/plugin` → frontend-workflow → configure:
 
 | Setting | Default | Effect |
 |---|---|---|
@@ -158,11 +163,11 @@ The gates send Claude back as many times as needed to finish the workflow, up to
 
 ## Per-project overrides
 
-Create `<project>/.claude/frontend-lead.roles.json` to add agents, change a role, or add path patterns, for example a project-specific agent or a `src/legacy/` folder treated as protected:
+Create `<project>/.claude/frontend-workflow.roles.json` (the pre-2.0 name `frontend-lead.roles.json` is still read) to add agents, change a role, or add path patterns, for example a project-specific agent or a `src/legacy/` folder treated as protected:
 
 ```json
 {
-  "agents": { "ecral-booking-expert": "builder" },
+  "agents": { "booking-expert": "builder" },
   "paths": { "protected": ["^src/legacy/"] }
 }
 ```
@@ -181,7 +186,7 @@ The same file can tune the autopilot per project: change what a mode requires, a
 
 ## Adding more agents from the VoltAgent repo
 
-1. Copy the agent file into `plugins/frontend-lead/agents/`.
+1. Copy the agent file into `plugins/frontend-workflow/agents/`.
 2. Set its `tools` / `disallowedTools` to match a role (reviewers: `Read, Grep, Glob, Bash`, never `Write`/`Edit`).
 3. Add it to `hooks/roles.json` → `agents` with its role. Until you do, it is treated as a read-only reviewer.
 4. Read the whole file first: agent files steer Claude in your codebase.

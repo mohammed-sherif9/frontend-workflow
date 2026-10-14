@@ -1,0 +1,52 @@
+# Copy to .github/workflows/claude-pr-review.yml
+# Runs the frontend-workflow review gate on every pull request and posts the result as a PR comment.
+# Setup: add the ANTHROPIC_API_KEY secret (or use `claude /install-github-app`), and replace
+# YOUR-GITHUB-USER below with where the frontend-workflow repo is hosted.
+name: Claude PR review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          plugin_marketplaces: |
+            https://github.com/YOUR-GITHUB-USER/frontend-workflow.git
+          plugins: |
+            frontend-workflow@mohamed-frontend
+          prompt: |
+            /frontend-workflow:gate origin/${{ github.base_ref }}...HEAD
+
+            When the report is ready, post it as one comment on pull request #${{ github.event.pull_request.number }}
+            by piping it through a heredoc: `gh pr comment ${{ github.event.pull_request.number }} --body-file - <<'EOF' ... EOF`.
+          claude_args: >-
+            --allowedTools "Agent,Read,Grep,Glob,Bash"
+          # Bash is safe here: the frontend-workflow hooks keep the shell read-only during a review
+          # (only `gh pr comment` is let through to post the result).

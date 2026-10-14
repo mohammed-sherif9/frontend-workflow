@@ -4,8 +4,8 @@
   "owner": { "name": "Mohamed Okasha" },
   "plugins": [
     {
-      "name": "frontend-lead",
-      "source": "./plugins/frontend-lead",
+      "name": "frontend-workflow",
+      "source": "./plugins/frontend-workflow",
       "description": "Lead-frontend-engineer workflow with strict, hook-enforced roles.",
       "category": "development"
     }

@@ -1,0 +1,22 @@
+{
+  "$comment": "Copy to <project>/.claude/settings.json and commit it. Teammates who trust the project get the plugin automatically. Replace the repo with where you host the workflow.",
+  "extraKnownMarketplaces": {
+    "mohamed-frontend": {
+      "source": { "source": "github", "repo": "YOUR-GITHUB-USER/frontend-workflow" }
+    }
+  },
+  "enabledPlugins": {
+    "frontend-workflow@mohamed-frontend": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ],
+    "allow": [
+      "Read(./.env.example)"
+    ]
+  }
+}
