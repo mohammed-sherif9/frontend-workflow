@@ -1,0 +1,35 @@
+{
+  "name": "frontend-lead",
+  "displayName": "Frontend Lead Workflow",
+  "version": "1.0.0",
+  "description": "Lead-frontend-engineer workflow for Next.js/React/TypeScript: planner, builder, tester, docs and reviewer subagents with hook-enforced role boundaries, verify and review gates, engineering standards and project tooling templates.",
+  "author": { "name": "Mohamed Okasha" },
+  "license": "MIT",
+  "keywords": ["frontend", "nextjs", "react", "typescript", "code-review", "workflow", "subagents"],
+  "userConfig": {
+    "strict_delegation": {
+      "type": "boolean",
+      "title": "Strict delegation",
+      "description": "When on, the main session (lead) may only write docs; all code must go through builder, tester and refactorer subagents.",
+      "default": false
+    },
+    "review_gate": {
+      "type": "boolean",
+      "title": "Review gate",
+      "description": "Block finishing a turn when code changed and no reviewer subagent ran afterwards.",
+      "default": true
+    },
+    "verify_on_stop": {
+      "type": "boolean",
+      "title": "Verify on stop",
+      "description": "Run typecheck, lint and related tests on changed files before the lead can finish a turn.",
+      "default": true
+    },
+    "lint_on_edit": {
+      "type": "boolean",
+      "title": "Format and lint on edit",
+      "description": "Run Prettier and ESLint --fix on every edited file and send remaining errors back immediately.",
+      "default": true
+    }
+  }
+}

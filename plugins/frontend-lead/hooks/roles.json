@@ -1,0 +1,97 @@
+{
+  "$comment": "Role map for the frontend-lead hooks. Edit this file to change who may write what. Path patterns are JavaScript regular expressions tested against the project-relative path with forward slashes.",
+
+  "agents": {
+    "frontend-architect": "planner",
+    "nextjs-developer": "builder",
+    "react-specialist": "builder",
+    "typescript-pro": "builder",
+    "refactoring-specialist": "refactorer",
+    "test-automator": "tester",
+    "documentation-engineer": "docs",
+    "code-reviewer": "reviewer",
+    "surgeon-reviewer": "reviewer",
+    "architect-reviewer": "reviewer",
+    "security-auditor": "reviewer",
+    "performance-engineer": "reviewer",
+    "accessibility-tester": "reviewer",
+    "seo-specialist": "reviewer",
+    "dependency-manager": "reviewer",
+    "qa-expert": "reviewer",
+    "debugger": "investigator"
+  },
+
+  "unknownSubagentRole": "reviewer",
+
+  "roles": {
+    "lead":         { "write": ["source", "test", "docs", "asset"], "bash": "lead" },
+    "planner":      { "write": [], "bash": "none" },
+    "builder":      { "write": ["source", "asset"], "bash": "build" },
+    "refactorer":   { "write": ["source"], "bash": "build" },
+    "tester":       { "write": ["test"], "bash": "build" },
+    "docs":         { "write": ["docs"], "bash": "none" },
+    "reviewer":     { "write": [], "bash": "readonly" },
+    "investigator": { "write": [], "bash": "readonly" }
+  },
+
+  "strictDelegationLeadWrite": ["docs"],
+
+  "paths": {
+    "secret": [
+      "(^|/)\\.env(?!\\.example$)(\\..*)?$",
+      "\\.(pem|key|p12|pfx)$",
+      "(^|/)id_(rsa|ed25519)"
+    ],
+    "locked": [
+      "(^|/)(package-lock\\.json|pnpm-lock\\.yaml|yarn\\.lock|bun\\.lockb?)$",
+      "(^|/)node_modules/",
+      "(^|/)\\.next/",
+      "(^|/)(dist|build|coverage|out)/"
+    ],
+    "protected": [
+      "(^|/)(eslint\\.config\\.[cm]?[jt]s|\\.eslintrc(\\..*)?)$",
+      "(^|/)tsconfig(\\..*)?\\.json$",
+      "(^|/)(prettier\\.config\\.[cm]?js|\\.prettierrc(\\..*)?)$",
+      "(^|/)(vitest|jest|playwright)\\.config\\.[cm]?[jt]s$",
+      "(^|/)\\.dependency-cruiser\\.[cm]?js$",
+      "(^|/)(lighthouserc(\\..*)?|\\.lighthouserc(\\..*)?)$",
+      "(^|/)lint-staged\\.config\\.[cm]?js$",
+      "(^|/)\\.husky/",
+      "(^|/)\\.github/",
+      "(^|/)package\\.json$",
+      "(^|/)CLAUDE\\.md$",
+      "(^|/)\\.claude/"
+    ],
+    "test": [
+      "\\.(test|spec)\\.[cm]?[jt]sx?$",
+      "(^|/)(__tests__|__mocks__|e2e|tests?)/",
+      "(^|/)(test-utils|vitest\\.setup|jest\\.setup|setupTests)(\\.[cm]?[jt]sx?)?$"
+    ],
+    "docs": [
+      "\\.mdx?$",
+      "(^|/)docs/"
+    ],
+    "source": [
+      "\\.(ts|tsx|js|jsx|mjs|cjs|css|scss)$"
+    ]
+  },
+
+  "content": {
+    "code": [
+      { "id": "any", "re": "(:\\s*any\\b|\\bas\\s+any\\b|<any>|\\bany\\[\\])", "msg": "`any` type. Use a real type, `unknown` plus narrowing, or a generic." },
+      { "id": "ts-suppress", "re": "@ts-(ignore|nocheck|expect-error)", "msg": "TypeScript error suppression. Fix the type error instead." },
+      { "id": "eslint-disable", "re": "eslint-disable", "msg": "ESLint rule disabled inline. Fix the code, or ask the lead/user to change the rule." },
+      { "id": "debugger", "re": "\\bdebugger\\s*;", "msg": "`debugger` statement." }
+    ],
+    "source": [
+      { "id": "console", "re": "\\bconsole\\.(log|debug|info)\\(", "msg": "`console.log/debug/info` in production code. Use the project logger or remove it." },
+      { "id": "unsafe-html", "re": "dangerouslySetInnerHTML", "msg": "`dangerouslySetInnerHTML` needs explicit approval and sanitization.", "severity": "approval" },
+      { "id": "eval", "re": "\\b(eval|new\\s+Function)\\s*\\(", "msg": "`eval`/`new Function` is not allowed." },
+      { "id": "public-secret", "re": "NEXT_PUBLIC_[A-Z0-9_]*(SECRET|PRIVATE|PASSWORD|TOKEN)", "msg": "A secret-looking value is exposed to the browser through NEXT_PUBLIC_." }
+    ],
+    "test": [
+      { "id": "focused-test", "re": "\\b(it|test|describe)\\.only\\(|\\bf(it|describe)\\(", "msg": "Focused test (`.only`). It silently skips the rest of the suite." },
+      { "id": "skipped-test", "re": "\\b(it|test|describe)\\.(skip|todo)\\(|\\bx(it|describe)\\(", "msg": "Skipped test. Fix it or delete it with the lead's approval." }
+    ]
+  }
+}

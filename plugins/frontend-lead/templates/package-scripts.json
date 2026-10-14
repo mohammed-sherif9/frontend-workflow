@@ -1,0 +1,22 @@
+{
+  "$comment": "Merge into package.json \"scripts\". Replace npm with the project's package manager where scripts call each other.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "depcruise": "depcruise src --config .dependency-cruiser.cjs",
+    "analyze": "ANALYZE=true next build",
+    "lhci": "lhci autorun",
+    "verify": "npm run lint && npm run typecheck && npm run depcruise && npm run test",
+    "prepare": "husky"
+  }
+}

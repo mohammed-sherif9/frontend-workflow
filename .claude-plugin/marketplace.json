@@ -1,0 +1,13 @@
+{
+  "name": "mohamed-frontend",
+  "description": "Mohamed's reusable frontend engineering workflows for Claude Code.",
+  "owner": { "name": "Mohamed Okasha" },
+  "plugins": [
+    {
+      "name": "frontend-lead",
+      "source": "./plugins/frontend-lead",
+      "description": "Lead-frontend-engineer workflow with strict, hook-enforced roles.",
+      "category": "development"
+    }
+  ]
+}
